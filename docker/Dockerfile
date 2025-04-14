@@ -26,11 +26,10 @@ RUN apt update \
 
 # ユーザー切り替え
 USER $USER
-RUN mkdir $OPT_DIR
-
-WORKDIR $OPT_DIR
 
 # condaのインストール
+RUN mkdir $OPT_DIR
+WORKDIR $OPT_DIR
 RUN wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh && \
     sh Miniconda3-latest-Linux-x86_64.sh -b -p ./miniconda3 && \
     rm -r Miniconda3-latest-Linux-x86_64.sh
@@ -91,7 +90,7 @@ RUN pip install accelerate
 ########################## phystwinの初期化
 
 # download temporal phystwin
-WORKDIR $OPT_DIR
+WORKDIR /home/$USER
 RUN git clone https://github.com/uedakensuke/PhysTwin.git
 
 WORKDIR $PHYSTWIN_DIR
@@ -102,28 +101,45 @@ RUN git clone --recurse-submodules https://github.com/microsoft/TRELLIS.git
 WORKDIR $PHYSTWIN_DIR/data_process/TRELLIS
 RUN . ./setup.sh --basic --xformers --flash-attn --diffoctreerast --spconv --mipgaussian --kaolin --nvdiffrast
 
-RUN pip install gsplat
+# playgroundの動作に必要だった
+USER root
+
+RUN apt install -y \
+    libx11-xcb1 \
+    libxcb1 \
+    libxcb-glx0 \
+    libxcb-keysyms1 \
+    libxcb-image0 \
+    libxcb-shm0 \
+    libxcb-icccm4 \
+    libxcb-sync1 \
+    libxcb-xfixes0 \
+    libxcb-shape0 \
+    libxcb-randr0 \
+    libxcb-render-util0 \
+    libxrender1 \
+    libxkbcommon-x11-0 \
+    libxext6 \
+    libglu1-mesa \
+    libgl1-mesa-glx \
+    libglib2.0-0
+
+USER $USER
+RUN pip install pynput einops
+
+# 使用するGPUに合わせて値を設定すること。RTX3060は8.6
+ENV TORCH_CUDA_ARCH_LIST "8.6"
+
+# RUN pip install gsplatではgsplat_cuda.soが入らなかった
+RUN pip install git+https://github.com/nerfstudio-project/gsplat.git
 RUN pip install kornia
 
 WORKDIR $PHYSTWIN_DIR/gaussian_splatting
 
-# diff-gaussian-rasterizationに必要な設定。使用するGPUに合わせて値を設定すること。RTX3060は8.6
-ENV TORCH_CUDA_ARCH_LIST "8.6"
-
 RUN pip install submodules/diff-gaussian-rasterization/
 RUN pip install submodules/simple-knn/
 
-WORKDIR $PHYSTWIN_DIR
-
 # Download the necessary pretrained models for data processing
+WORKDIR $PHYSTWIN_DIR
 RUN bash env_install/download_pretrained_models.sh
 
-USER root
-
-# playgroundの動作に必要だった
-RUN apt install -y \
-    libgl1 \
-    libglu1-mesa \
-    libgl1-mesa-glx \
-    libglib2.0-0
-RUN pip install pynput einops
