@@ -7,7 +7,7 @@ ARG UID
 ARG GID
 ARG ENV_NAME=phystwin
 ARG OPT_DIR=/home/$USER/opt
-ARG PHYSTWIN_DIR=/home/$USER/mount/PhysTwin
+ARG PHYSTWIN_DIR=/home/$USER/PhysTwin
 
 # condaが.bashrcを使用するので-iをつける
 SHELL ["/bin/bash", "-i", "-c"]
@@ -90,19 +90,22 @@ RUN pip install accelerate
 
 ########################## phystwinの初期化
 
-# download phystwin
-WORKDIR PHYSTWIN_DIR
+# download temporal phystwin
+WORKDIR $OPT_DIR
+RUN git clone https://github.com/uedakensuke/PhysTwin.git
+
+WORKDIR $PHYSTWIN_DIR
 
 # Install the env for trellis
-WORKDIR PHYSTWIN_DIR/data_process
+WORKDIR $PHYSTWIN_DIR/data_process
 RUN git clone --recurse-submodules https://github.com/microsoft/TRELLIS.git
-WORKDIR PHYSTWIN_DIR/data_process/TRELLIS
+WORKDIR $PHYSTWIN_DIR/data_process/TRELLIS
 RUN . ./setup.sh --basic --xformers --flash-attn --diffoctreerast --spconv --mipgaussian --kaolin --nvdiffrast
 
 RUN pip install gsplat
 RUN pip install kornia
 
-WORKDIR PHYSTWIN_DIR/gaussian_splatting
+WORKDIR $PHYSTWIN_DIR/gaussian_splatting
 
 # diff-gaussian-rasterizationに必要な設定。使用するGPUに合わせて値を設定すること。RTX3060は8.6
 ENV TORCH_CUDA_ARCH_LIST "8.6"
@@ -110,7 +113,7 @@ ENV TORCH_CUDA_ARCH_LIST "8.6"
 RUN pip install submodules/diff-gaussian-rasterization/
 RUN pip install submodules/simple-knn/
 
-WORKDIR PHYSTWIN_DIR
+WORKDIR $PHYSTWIN_DIR
 
 # Download the necessary pretrained models for data processing
 RUN bash env_install/download_pretrained_models.sh
