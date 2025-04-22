@@ -16,13 +16,38 @@ SHELL ["/bin/bash", "-i", "-c"]
 RUN groupadd -g $GID $USER && \
     useradd -m -s /bin/bash -u $UID -g $GID $USER
 
-RUN apt update \
- && apt install -y --no-install-recommends \
+
+#### openGLのインストール
+RUN apt update
+RUN apt install -y \
+    libx11-xcb1 \
+    libxcb1 \
+    libxcb-glx0 \
+    libxcb-keysyms1 \
+    libxcb-image0 \
+    libxcb-shm0 \
+    libxcb-icccm4 \
+    libxcb-sync1 \
+    libxcb-xfixes0 \
+    libxcb-shape0 \
+    libxcb-randr0 \
+    libxcb-render-util0 \
+    libxrender1 \
+    libxkbcommon-x11-0 \
+    libxext6 \
+    libglu1-mesa \
+    libgl1-mesa-glx \
+    libglib2.0-0
+
+#### その他ツールのインストール
+RUN apt install -y --no-install-recommends \
     sudo \
     wget \
     nano \
     x11-apps \
     git
+
+RUN apt install -y mesa-utils    
 
 # ユーザー切り替え
 USER $USER
@@ -45,6 +70,10 @@ RUN conda update -n base -c defaults conda && \
     /bin/bash -c "echo 'conda activate ${ENV_NAME}' >> /home/$USER/.bashrc" && \
     source /home/$USER/.bashrc
 
+# Install the packages
+RUN pip install open3d
+RUN conda install -y opencv
+
 ########################## phystwin-commonステージのbuild ##########################
 FROM base as phystwin-common
 
@@ -66,7 +95,7 @@ ENV TORCH_CUDA_ARCH_LIST "8.6"
 
 # download temporal phystwin
 WORKDIR /home/$USER
-RUN git clone https://github.com/uedakensuke/PhysTwin.git
+RUN git clone -b refactor2 https://github.com/uedakensuke/PhysTwin.git
 
 ########################## phystwin-mainステージのbuild ##########################
 FROM phystwin-common as phystwin-main
@@ -86,7 +115,6 @@ USER $USER
 RUN pip install warp-lang
 RUN pip install usd-core matplotlib
 RUN pip install "pyglet<2"
-RUN pip install open3d
 RUN pip install trimesh
 RUN pip install rtree 
 RUN pip install pyrender
@@ -96,37 +124,12 @@ RUN pip install termcolor
 RUN pip install fvcore
 RUN pip install wandb
 RUN pip install moviepy imageio
-RUN conda install -y opencv
 RUN pip install cma
 RUN pip install --no-index --no-cache-dir pytorch3d -f https://dl.fbaipublicfiles.com/pytorch3d/packaging/wheels/py310_cu121_pyt240/download.html
 
 #### phystwinの初期化
 
 # playgroundの動作に必要だった
-USER root
-
-RUN apt install -y \
-    libx11-xcb1 \
-    libxcb1 \
-    libxcb-glx0 \
-    libxcb-keysyms1 \
-    libxcb-image0 \
-    libxcb-shm0 \
-    libxcb-icccm4 \
-    libxcb-sync1 \
-    libxcb-xfixes0 \
-    libxcb-shape0 \
-    libxcb-randr0 \
-    libxcb-render-util0 \
-    libxrender1 \
-    libxkbcommon-x11-0 \
-    libxext6 \
-    libglu1-mesa \
-    libgl1-mesa-glx \
-    libglib2.0-0
-
-RUN apt install -y mesa-utils
-
 USER $USER
 RUN pip install pynput einops
 
@@ -139,15 +142,15 @@ RUN pip install kornia
 
 WORKDIR $PHYSTWIN_DIR/gaussian_splatting
 
-RUN pip install submodules/diff-gaussian-rasterization/
-RUN pip install submodules/simple-knn/
+# RUN pip install submodules/diff-gaussian-rasterization/
+# RUN pip install submodules/simple-knn/
 
-#### virtualglのインストール
-WORKDIR $OPT_DIR
-USER $USER
-RUN wget https://sourceforge.net/projects/virtualgl/files/3.1/virtualgl_3.1_amd64.deb/download -O virtualgl_3.1_amd64.deb
-USER root
-RUN apt install -y ./virtualgl_3.1_amd64.deb
+# #### virtualglのインストール
+# WORKDIR $OPT_DIR
+# USER $USER
+# RUN wget https://sourceforge.net/projects/virtualgl/files/3.1/virtualgl_3.1_amd64.deb/download -O virtualgl_3.1_amd64.deb
+# USER root
+# RUN apt install -y ./virtualgl_3.1_amd64.deb
 
-# vglrunでpytorchのpythonを実行する際に下記が必要だった。
-ENV LD_LIBRARY_PATH=/home/$USER/opt/miniconda3/envs/$ENV_NAME/lib/python3.10/site-packages/torch/lib:$LD_LIBRARY_PATH
+# # vglrunでpytorchのpythonを実行する際に下記が必要だった。
+# ENV LD_LIBRARY_PATH=/home/$USER/opt/miniconda3/envs/$ENV_NAME/lib/python3.10/site-packages/torch/lib:$LD_LIBRARY_PATH

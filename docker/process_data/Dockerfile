@@ -6,7 +6,7 @@ FROM nvidia/cuda:12.1.1-devel-ubuntu22.04 as base
 ARG USER
 ARG UID
 ARG GID
-ARG ENV_NAME=phystwin-main
+ARG ENV_NAME=phystwin-process_data
 ARG OPT_DIR=/home/$USER/opt
 
 # condaが.bashrcを使用するので-iをつける
@@ -16,13 +16,37 @@ SHELL ["/bin/bash", "-i", "-c"]
 RUN groupadd -g $GID $USER && \
     useradd -m -s /bin/bash -u $UID -g $GID $USER
 
-RUN apt update \
- && apt install -y --no-install-recommends \
+#### openGLのインストール
+RUN apt update
+RUN apt install -y \
+    libx11-xcb1 \
+    libxcb1 \
+    libxcb-glx0 \
+    libxcb-keysyms1 \
+    libxcb-image0 \
+    libxcb-shm0 \
+    libxcb-icccm4 \
+    libxcb-sync1 \
+    libxcb-xfixes0 \
+    libxcb-shape0 \
+    libxcb-randr0 \
+    libxcb-render-util0 \
+    libxrender1 \
+    libxkbcommon-x11-0 \
+    libxext6 \
+    libglu1-mesa \
+    libgl1-mesa-glx \
+    libglib2.0-0
+
+#### その他ツールのインストール
+RUN apt install -y --no-install-recommends \
     sudo \
     wget \
     nano \
     x11-apps \
     git
+
+RUN apt install -y mesa-utils    
 
 # ユーザー切り替え
 USER $USER
@@ -66,7 +90,11 @@ ENV TORCH_CUDA_ARCH_LIST "8.6"
 
 # download temporal phystwin
 WORKDIR /home/$USER
-RUN git clone https://github.com/uedakensuke/PhysTwin.git
+RUN git clone -b refactor2 https://github.com/uedakensuke/PhysTwin.git
+
+# Install the packages
+RUN pip install open3d
+RUN conda install -y opencv
 
 ########################## phystwin-process_dataステージのbuild ##########################
 FROM phystwin-common as phystwin-process_data
@@ -82,6 +110,10 @@ SHELL ["/bin/bash", "-i", "-c"]
 # ユーザー切り替え
 USER $USER
 
+# Download the necessary pretrained models for data processing
+WORKDIR $PHYSTWIN_DIR
+RUN bash env_install/download_pretrained_models.sh
+
 # needed for GroundingDINO
 ENV CUDA_HOME=/usr/local/cuda-12.1
 
@@ -93,21 +125,16 @@ RUN pip install git+https://github.com/IDEA-Research/GroundingDINO.git
 RUN pip install diffusers
 RUN pip install accelerate
 
-WORKDIR $PHYSTWIN_DIR
-
 # Install the env for trellis
-WORKDIR $PHYSTWIN_DIR/data_process
+WORKDIR $OPT_DIR
 RUN git clone --recurse-submodules https://github.com/microsoft/TRELLIS.git
-WORKDIR $PHYSTWIN_DIR/data_process/TRELLIS
-RUN source ./setup.sh --basic --xformers --flash-attn --diffoctreerast --spconv --mipgaussian --kaolin --nvdiffrast
 
-# Download the necessary pretrained models for data processing
-WORKDIR $PHYSTWIN_DIR
-RUN bash env_install/download_pretrained_models.sh
-
-# Install the packages
-RUN pip install open3d
-RUN conda install -y opencv
+WORKDIR $OPT_DIR/TRELLIS
+ENV PYTHONPATH=/$OPT_DIR/TRELLIS:$PYTHONPATH
+# 注：TRELLISのsetup.shはGPUが使えるかチェックしている。docker build時はGPU使えない判定となって上手くいかない。
+# RUN source ./setup.sh --basic --xformers --flash-attn --diffoctreerast --spconv --mipgaussian --kaolin --nvdiffrast > log_setup_trellis.txt
+COPY ./resource/setup_with_cuda.sh .
+RUN source ./setup_with_cuda.sh --basic --xformers --flash-attn --diffoctreerast --spconv --mipgaussian --kaolin --nvdiffrast > log_setup_trellis.txt
 
 # RUN pip install warp-lang
 # RUN pip install usd-core matplotlib
