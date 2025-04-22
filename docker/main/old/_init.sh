@@ -1,7 +1,7 @@
 #!/bin/bash
-IMG_TAG="phystwin"
-CONTAINER_NAME="phystwin-$USER"
-ENV_NAME="phystwin"
+IMG_TAG="phystwin-main"
+CONTAINER_NAME="phystwin-main-$USER"
+ENV_NAME="phystwin-main"
 
 ################# clean up
 echo "---- stopping the old container"
@@ -14,7 +14,7 @@ docker rm $CONTAINER_NAME
 
 ################# build image
 echo "---- building a new image"
-docker build --build-arg USER=$USER --build-arg UID="$(id -u $USER)" --build-arg GID="$(id -g $USER)" -t $IMG_TAG .
+docker build --build-arg USER=$USER --build-arg UID="$(id -u $USER)" --build-arg GID="$(id -g $USER)" -t $IMG_TAG ..
 
 if [ $? -ne 0 ]; then
     echo "ビルドに失敗しました"
@@ -28,11 +28,11 @@ groups="$(id --real --groups $USER)"
 add_groups=$(for t in $groups;do echo "--group-add=$t"; done)
 
 docker create -it\
-    --user="$(id -u $USER):$(id -g $USER)"\
     $add_groups\
     --env="DISPLAY"\
     --env="USER"\
     --env=QT_X11_NO_MITSHM=1\
+    --env NVIDIA_DRIVER_CAPABILITIES=all\
     --workdir="/home/$USER"\
     --volume="$PWD/../mount:/home/$USER/mount"\
     --volume="/home/$USER/.Xauthority:/home/$USER/.Xauthority"\

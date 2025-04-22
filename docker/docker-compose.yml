@@ -1,0 +1,72 @@
+version: "3.8"
+
+name: phystwin-${USER}
+services:
+  main:
+    build:
+      context: main
+      args:
+        - UID
+        - GID
+        - USERNAME=${USER}
+    stdin_open: true
+    tty: true
+    environment:
+      - USER=${USER}
+      - QT_X11_NO_MITSHM=1
+      - NVIDIA_DRIVER_CAPABILITIES=all
+      - XDG_RUNTIME_DIR=${XDG_RUNTIME_DIR}
+    working_dir: /home/${USER}
+    volumes:
+      - ../mount:/home/${USER}/mount
+      - /home/${USER}/.Xauthority:/home/${USER}/.Xauthority
+      - /etc/group:/etc/group:ro
+      - /etc/passwd:/etc/passwd:ro
+      - /etc/shadow:/etc/shadow:ro
+      - /etc/sudoers.d:/etc/sudoers.d:ro
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - $XDG_RUNTIME_DIR:$XDG_RUNTIME_DIR
+    group_add:
+      - $SUDO_GID
+      - $VGLUSERS_GID
+    network_mode: host
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
+    command: bash
+  process_data:
+    build:
+      context: process_data
+      args:
+        - UID
+        - GID
+        - USERNAME=${USER}
+    stdin_open: true
+    tty: true
+    environment:
+      - USER=${USER}
+      - QT_X11_NO_MITSHM=1
+      - NVIDIA_DRIVER_CAPABILITIES=all
+      - XDG_RUNTIME_DIR=${XDG_RUNTIME_DIR}
+    working_dir: /home/${USER}
+    volumes:
+      - ../mount:/home/${USER}/mount
+      - /home/${USER}/.Xauthority:/home/${USER}/.Xauthority
+      - /etc/group:/etc/group:ro
+      - /etc/passwd:/etc/passwd:ro
+      - /etc/shadow:/etc/shadow:ro
+      - /etc/sudoers.d:/etc/sudoers.d:ro
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - $XDG_RUNTIME_DIR:$XDG_RUNTIME_DIR
+    group_add:
+      - $SUDO_GID
+      - $VGLUSERS_GID
+    network_mode: host
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
+    command: bash
