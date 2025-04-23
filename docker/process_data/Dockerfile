@@ -69,6 +69,16 @@ RUN conda update -n base -c defaults conda && \
     /bin/bash -c "echo 'conda activate ${ENV_NAME}' >> /home/$USER/.bashrc" && \
     source /home/$USER/.bashrc
 
+# #### virtualglのインストール
+WORKDIR $OPT_DIR
+USER $USER
+RUN wget https://sourceforge.net/projects/virtualgl/files/3.1/virtualgl_3.1_amd64.deb/download -O virtualgl_3.1_amd64.deb
+USER root
+RUN apt install -y ./virtualgl_3.1_amd64.deb
+
+# vglrunでpytorchのpythonを実行する際に下記が必要だった。
+ENV LD_LIBRARY_PATH=/home/$USER/opt/miniconda3/envs/$ENV_NAME/lib/python3.10/site-packages/torch/lib:$LD_LIBRARY_PATH
+
 ########################## phystwin-commonステージのbuild ##########################
 FROM base as phystwin-common
 
@@ -86,15 +96,15 @@ RUN conda install -y "numpy==1.26.4"
 # pytorchの導入
 RUN conda install -y pytorch==2.4.0 torchvision==0.19.0 torchaudio==2.4.0 pytorch-cuda=12.1 -c pytorch -c nvidia
 # 使用するGPUに合わせて値を設定すること。RTX3060は8.6
-ENV TORCH_CUDA_ARCH_LIST "8.6"
-
-# download temporal phystwin
-WORKDIR /home/$USER
-RUN git clone -b refactor2 https://github.com/uedakensuke/PhysTwin.git
+ENV TORCH_CUDA_ARCH_LIST "8.0"
 
 # Install the packages
 RUN pip install open3d
 RUN conda install -y opencv
+
+# download temporal phystwin
+WORKDIR /home/$USER
+RUN git clone -b refactor2 https://github.com/uedakensuke/PhysTwin.git
 
 ########################## phystwin-process_dataステージのbuild ##########################
 FROM phystwin-common as phystwin-process_data

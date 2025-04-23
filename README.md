@@ -156,33 +156,45 @@ inference.shでは下記を順番に実行している。個別に実行した�
 
 ### process_dataの処理ステップ
 
-- 下記の順序で実行される。★はdata_config.csvにおいてshape_priorがTrueになっている場合のみ実行する。
-  1. Video Segmentation
-    - カメラのカラー動画から、下記のデータが作成される
-      - マスク画像： `{カメラ番号}/{オブジェクト番号}/{フレーム番号}.png`
-      - オブジェクト番号とオブジェクト名の対応辞書： `mask_info_{カメラ番号}.json`
-    - 後続処理は、ここでオブジェクトが下記の個数検出されることを前提としている
-      - ハンドが１～２個
-      - 操作対象物１個
-  2. (★)Image Upscale
-    - カメラのカラー動画とマスク画像から、下記のデータが作成される
-  3. (★)Image Segmentation
-  4. (★)Shape Prior Generation
-  5. Dense Tracking
-  6. Lift to 3D
-  7. Mask Post-Processing
-  8. Data Tracking
-  9. (★)Alignment
-  10. Final Data Generation
+下記の順序で実行される。
+★はdata_config.csvにおいてshape_priorがTrueになっている場合のみ実行する。
+
+1. Video Segmentation
+  - カメラのカラー動画`{camera_idx}.mp4`から、下記のデータが作成される
+    - マスク画像： `{カメラ番号}/{オブジェクト番号}/{フレーム番号}.png`
+    - オブジェクト番号とオブジェクト名の対応辞書： `mask_info_{カメラ番号}.json`
+  - 後続処理は、ここでオブジェクトが下記の個数検出されることを前提としている
+    - ハンドが１～２個
+    - 操作対象物１個
+2. (★)1視点からの3Dモデル予測
+  - 下記の処理を順に行う
+    1. Image Upscale
+      - カメラ0のフレーム0において、カラー画像`0/0.png`と対象物のマスク画像`0/{obj_idx}/0.png`から、下記のデータが作成される
+        - 対象物クロップ高解像度画像： `high_resolution.png`
+    2. Image Segmentation
+      - 対象物クロップ高解像度画像`high_resolution.png`から、下記のデータが作成される
+        - 対象物クロップ高解像セグメンテーション画像： `masked_image.png`
+    3. Shape Prior Generation
+      - 対象物クロップ高解像度セグメンテーション画像`masked_image.png`から、下記のデータが作成される
+        - 対象物モデル glb形式： `object.glb`
+        - 対象物モデル ply形式： `object.ply`
+        - 対象物可視化動画（チェック用）： `visualization.mp4`
+3. Dense Tracking
+  - カメラのカラー動画`{camera_idx}.mp4`とフレーム0のマスク画像`{camera_idx}/{obj_idx}/0.png`から、下記のデータが作成される
+    - 対象物&ハンドのトラッキング動画（確認用）： `{camera_idx}.mp4`
+    - 対象物&ハンドのトラッキング結果： `{camera_idx}.npz`
+4. Lift to 3D
+5. Mask Post-Processing
+6. Data Tracking
+7. (★)Alignment
+8. Final Data Generation
 
 #### process_dataで生成されるデータ
 
 |前処理|データ生成場所|
 |--|--|
 |Video Segmentation|`(このレポジトリをcloneした場所)/mount/ws/data/different_types/ケース名/mask`|
-|Image Upscale|`(このレポジトリをcloneした場所)/mount/ws/data/different_types/ケース名/shape`|
-|Image Segmentation|`(このレポジトリをcloneした場所)/mount/ws/data/different_types/ケース名/shape`|
-|Shape Prior Generation|`(このレポジトリをcloneした場所)/mount/ws/data/different_types/ケース名/shape`|
+|1視点からの3Dモデル予測|`(このレポジトリをcloneした場所)/mount/ws/data/different_types/ケース名/shape`|
 
 |Dense Tracking|`(このレポジトリをcloneした場所)/mount/ws/data/different_types/ケース名/`|
 |Lift to 3D|`(このレポジトリをcloneした場所)/mount/ws/data/different_types/ケース名/`|
@@ -259,9 +271,9 @@ RTX 3060 12G環境で確認
 
     - 事前設定
         - VirtualGLをインストール
-            - vglrunコマンドが使えるようにする
+            - ホスト側でvglrunコマンドが使えるようにする
         - Ubuntuマシン上でXorgが起動している状態にする
-            - nvidia-smiコマンドを実行した時に「/usr/lib/xorg/Xorg」が存在すること
+            - ホスト側でnvidia-smiコマンドを実行した時に「/usr/lib/xorg/Xorg」が存在すること
             - 存在しない場合は、下記で起動
             ```bash
             1. 設定ファイル作成
