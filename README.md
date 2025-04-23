@@ -272,6 +272,12 @@ RTX 3060 12G環境で確認
     - 事前設定
         - VirtualGLをインストール
             - ホスト側でvglrunコマンドが使えるようにする
+            - `sudo /opt/VirtualGL/bin/vglserver_config`も実行しておくこと
+              - 実行結果でエラーがでてないかよく確認すること。下記エラーなど。
+                ```
+                modprobe: FATAL: Module nvidia_uvm is in use.
+                ```
+              - 設定後Xを再起動すること
         - Ubuntuマシン上でXorgが起動している状態にする
             - ホスト側でnvidia-smiコマンドを実行した時に「/usr/lib/xorg/Xorg」が存在すること
             - 存在しない場合は、下記で起動
@@ -350,7 +356,7 @@ vglrun -d :0 glxgears
     ```
     - コンテナを起動するときに下記オプションつけているか確認
         - -e NVIDIA_DRIVER_CAPABILITIES=all
-3. 
+3. 認証エラー(x11転送時の手元PC側ディスプレイ. 例:10)
     ```
     X11 connection rejected because of wrong authentication.
     ```
@@ -359,3 +365,18 @@ vglrun -d :0 glxgears
         - コンテナ起動時にマウントで下記のいずれかでxauthの設定を引き継ぐこと。
           - コンテナ内でrootを使用する場合：--volume=/home/$USER/.Xauthority:/root/.Xauthority
           - コンテナ内でユーザを使用する場合：--volume=/home/$USER/.Xauthority:/home/$USER/.Xauthority
+    - ホスト上でvglrunできるのに、コンテナ上でこのエラーが出る場合、xauthのクッキーがホスト内とコンテナ内で異なっていることを疑うこと
+      - `/home/${USER}/.Xauthority`をマウントしているのに異なっていた場合、再度dockerを軌道しなおすと治る
+
+4. 認証エラー(x11転送時のホスト側仮想ディスプレイ側. 例:0)
+    ```
+    Invalid MIT-MAGIC-COOKIE-1 key[VGL] ERROR: Could not open display :0.
+    ```
+    - 下記をリモートホストで実行してx11転送時の手元PC側ディスプレイ(例:10)のcookieを調べる
+    ```
+    xauth list :10
+    ```
+    - 下記をリモートホストで実行してcookieを想ディスプレイ側（例:0）にも設定する
+    ```
+    xauth add :0 MIT-MAGIC-COOKIE-1 {xauth listで表示されたcookie}
+    ```
