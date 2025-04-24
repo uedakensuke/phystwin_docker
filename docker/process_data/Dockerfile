@@ -96,7 +96,7 @@ RUN conda install -y "numpy==1.26.4"
 # pytorchの導入
 RUN conda install -y pytorch==2.4.0 torchvision==0.19.0 torchaudio==2.4.0 pytorch-cuda=12.1 -c pytorch -c nvidia
 # 使用するGPUに合わせて値を設定すること。RTX3060は8.6
-ENV TORCH_CUDA_ARCH_LIST "8.0"
+ENV TORCH_CUDA_ARCH_LIST "8.6"
 
 # Install the packages
 RUN pip install open3d

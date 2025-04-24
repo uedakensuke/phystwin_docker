@@ -42,13 +42,18 @@ optimize.shでは下記を順番に実行している。個別に実行したい
   _optimize_appearance.sh ケース名
   ```
 
-#### optimizeで生成されるデータ
+#### optimizeで生成されるデータの場所
 
-|最適化処理|データ生成場所|
+optimizeで生成される全てのデータは下記の場所にできる
+- `(このレポジトリをcloneした場所)/mount/ws/**/*`
+
+**のサブディレクトリ名称は下記表の通り
+
+|最適化処理|サブディレクトリ名|
 |--|--|
-|optimize_physics_sparse|`(このレポジトリをcloneした場所)/mount/ws/experiments_optimization/ケース名`|
-|optimize_physics_dense|`(このレポジトリをcloneした場所)/mount/ws/experiments/ケース名/train`|
-|optimize_appearance|`(このレポジトリをcloneした場所)/mount/ws/gaussian_output/ケース名/実験名（固定）`|
+|optimize_physics_sparse|`experiments_optimization/ケース名`|
+|optimize_physics_dense|`experiments/ケース名/train`|
+|optimize_appearance|`gaussian_output/ケース名/実験名（固定）`|
 
 ### 学習結果（最適化結果）からの推論
 
@@ -98,17 +103,17 @@ inference.shでは下記を順番に実行している。個別に実行した�
 #### inferenceで生成されるデータの場所
 
 inferenceで生成される全てのデータは下記の場所にできる
-- `(このレポジトリをcloneした場所)/mount/ws/render/ケース名/**/*`
+- `(このレポジトリをcloneした場所)/mount/ws/render/**/*`
 
 **のサブディレクトリ名称は下記表の通り
 
-|推論処理|サブディレクトリ名称|
+|推論処理|サブディレクトリ名|
 |--|--|
-|inference_physics_dense|`physics`|
-|inference_appearance|`appearance`|
-|inference_dynamic|`dynamic`|
-|visualize_force|`force`|
-|visualize_material|`material`|
+|inference_physics_dense|`ケース名/physics`|
+|inference_appearance|`ケース名/appearance`|
+|inference_dynamic|`ケース名/dynamic`|
+|visualize_force|`ケース名/force`|
+|visualize_material|`ケース名/material`|
 
 ### シミュレーション結果の評価
 
@@ -119,13 +124,17 @@ inferenceで生成される全てのデータは下記の場所にできる
     eval.sh ケース名
     ```
 
-#### evalで生成されるデータ
+#### evalで生成されるデータの場所
+
+evalで生成される全てのデータは下記の場所にできる
+- `(このレポジトリをcloneした場所)/mount/ws/**/*`
+
 
 |評価処理|データ生成場所|
 |--|--|
-|export_render_eval_data|`(このレポジトリをcloneした場所)/mount/ws/eval/ケース名/render_eval_data`|
-|visualize_render_results|`(このレポジトリをcloneした場所)/mount/ws/render/ケース名/dynamic`|
-|evaluate|`(このレポジトリをcloneした場所)/mount/ws/eval/ケース名/results`|
+|export_render_eval_data|`eval/ケース名/render_eval_data`|
+|visualize_render_results|`render/ケース名/dynamic`|
+|evaluate|`eval/ケース名/results`|
 
 ## 動画の前処理
 
@@ -235,18 +244,18 @@ inferenceで生成される全てのデータは下記の場所にできる
 #### process_dataで生成されるデータの場所
 
 process_dataで生成される全てのデータは下記の場所にできる
-- `(このレポジトリをcloneした場所)/mount/ws/data/different_types/ケース名/**/*`
+- `(このレポジトリをcloneした場所)/mount/ws/data/different_types/**/*`
 
 **のサブディレクトリ名称は下記表の通り
 
-|前処理|サブディレクトリ名称|
+|前処理|サブディレクトリ名|
 |--|--|
-|Video Segmentation|`mask`|
-|1視点からの3Dモデル予測|`shape`|
-|Dense Tracking|`cotracker`|
-|Lift to 3D|`pcd`|
-|Mask Post-Processing|`mask`|
-|Data Tracking|``|
+|Video Segmentation|`ケース名/mask`|
+|1視点からの3Dモデル予測|`ケース名/shape`|
+|Dense Tracking|`ケース名/cotracker`|
+|Lift to 3D|`ケース名/pcd`|
+|Mask Post-Processing|`ケース名/mask`|
+|Data Tracking|`ケース名`|
 |Alignment|``|
 |Final Data Generation|``|
 
