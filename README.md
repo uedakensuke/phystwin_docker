@@ -95,15 +95,20 @@ inference.shでは下記を順番に実行している。個別に実行した�
   _visualize_material.sh ケース名
   ```
 
-#### inferenceで生成されるデータ
+#### inferenceで生成されるデータの場所
 
-|推論処理|データ生成場所|
+inferenceで生成される全てのデータは下記の場所にできる
+- `(このレポジトリをcloneした場所)/mount/ws/render/ケース名/**/*`
+
+**のサブディレクトリ名称は下記表の通り
+
+|推論処理|サブディレクトリ名称|
 |--|--|
-|inference_physics_dense|`(このレポジトリをcloneした場所)/mount/ws/render/ケース名/physics`|
-|inference_appearance|`(このレポジトリをcloneした場所)/mount/ws/render/ケース名/appearance`|
-|inference_dynamic|`(このレポジトリをcloneした場所)/mount/ws/render/ケース名/dynamic`|
-|visualize_force|`(このレポジトリをcloneした場所)/mount/ws/render/ケース名/force`|
-|visualize_material|`(このレポジトリをcloneした場所)/mount/ws/render/ケース名/material`|
+|inference_physics_dense|`physics`|
+|inference_appearance|`appearance`|
+|inference_dynamic|`dynamic`|
+|visualize_force|`force`|
+|visualize_material|`material`|
 
 ### シミュレーション結果の評価
 
@@ -160,48 +165,90 @@ inference.shでは下記を順番に実行している。個別に実行した�
 ★はdata_config.csvにおいてshape_priorがTrueになっている場合のみ実行する。
 
 1. Video Segmentation
-  - カメラのカラー動画`{camera_idx}.mp4`から、下記のデータが作成される
-    - マスク画像： `{カメラ番号}/{オブジェクト番号}/{フレーム番号}.png`
-    - オブジェクト番号とオブジェクト名の対応辞書： `mask_info_{カメラ番号}.json`
+  - 使用ソフトウェア
+    - GroundedSAM2(GroundingDINO+SAM2)
+  - 使用データ
+    - カメラのカラー動画：`{camera_idx}.mp4`
+  - 生成
+    - マスク画像： `{cemera_idx}/{obj\idx}/{frame_idx}.png`
+    - オブジェクト辞書： `mask_info_{cemera_idx}.json`
   - 後続処理は、ここでオブジェクトが下記の個数検出されることを前提としている
     - ハンドが１～２個
     - 操作対象物１個
 2. (★)1視点からの3Dモデル予測
   - 下記の処理を順に行う
     1. Image Upscale
-      - カメラ0のフレーム0において、カラー画像`0/0.png`と対象物のマスク画像`0/{obj_idx}/0.png`から、下記のデータが作成される
+      - 使用データ
+        - カメラ0のフレーム0のカラー画像：`0/0.png`
+        - カメラ0のフレーム0の対象物のマスク画像：`0/{対象物のobj_idx}/0.png`
+      - 生成
         - 対象物クロップ高解像度画像： `high_resolution.png`
     2. Image Segmentation
-      - 対象物クロップ高解像度画像`high_resolution.png`から、下記のデータが作成される
+      - 使用ソフトウェア
+        - GroundedSAM2(GroundingDINO+SAM2)
+      - 使用データ
+        - 対象物クロップ高解像度画像：`high_resolution.png`
+      - 生成
         - 対象物クロップ高解像セグメンテーション画像： `masked_image.png`
     3. Shape Prior Generation
-      - 対象物クロップ高解像度セグメンテーション画像`masked_image.png`から、下記のデータが作成される
+      - 使用ソフトウェア
+        - TRELLIS（GPU メモリ16GB以上）
+      - 使用データ
+        - 対象物クロップ高解像度セグメンテーション画像`masked_image.png`
+      - 生成
         - 対象物モデル glb形式： `object.glb`
         - 対象物モデル ply形式： `object.ply`
         - 対象物可視化動画（チェック用）： `visualization.mp4`
 3. Dense Tracking
-  - カメラのカラー動画`{camera_idx}.mp4`とフレーム0のマスク画像`{camera_idx}/{obj_idx}/0.png`から、下記のデータが作成される
+  - 使用データ
+    - カメラのカラー動画：`{camera_idx}.mp4`
+    - フレーム0のマスク画像：`{camera_idx}/{obj_idx}/0.png`
+  - 生成
     - 対象物&ハンドのトラッキング動画（確認用）： `{camera_idx}.mp4`
     - 対象物&ハンドのトラッキング結果： `{camera_idx}.npz`
 4. Lift to 3D
+  - 使用データ
+    - カラー画像：`{camera_idx}/{frame_idx}.png`
+    - 対象物のマスク画像：`{camera_idx}/{対象物のobj_idx}/{frame_idx}.png`
+  - 生成
+    - 全カメラ統合対象物点群：`{frame_idx}.npz`
 5. Mask Post-Processing
+  - 使用データ
+    - 全カメラ統合対象物点群：`{frame_idx}.npz`
+    - マスク画像：`{camera_idx}/{obj_idx}/{frame_idx}.png`
+    - オブジェクト辞書：`mask_info_{cemera_idx}.json`
+  - 生成
+    - 全カメラ統合対象物点群に対するマスク：`processed_masks.pkl`
 6. Data Tracking
+  - 使用データ
+    - 全カメラ統合対象物点群：`{frame_idx}.npz`
+    - 全カメラ統合対象物点群に対するマスク：`processed_masks.pkl`
+    - 対象物&ハンドのトラッキング結果： `{camera_idx}.npz`
+  - 生成
+    - トラッキングデータ：`track_process_data.pkl`
 7. (★)Alignment
+  - 使用ソフトウェア
+    - pytorch3d（GPU メモリ16GB以上）
+
 8. Final Data Generation
 
-#### process_dataで生成されるデータ
+#### process_dataで生成されるデータの場所
 
-|前処理|データ生成場所|
+process_dataで生成される全てのデータは下記の場所にできる
+- `(このレポジトリをcloneした場所)/mount/ws/data/different_types/ケース名/**/*`
+
+**のサブディレクトリ名称は下記表の通り
+
+|前処理|サブディレクトリ名称|
 |--|--|
-|Video Segmentation|`(このレポジトリをcloneした場所)/mount/ws/data/different_types/ケース名/mask`|
-|1視点からの3Dモデル予測|`(このレポジトリをcloneした場所)/mount/ws/data/different_types/ケース名/shape`|
-
-|Dense Tracking|`(このレポジトリをcloneした場所)/mount/ws/data/different_types/ケース名/`|
-|Lift to 3D|`(このレポジトリをcloneした場所)/mount/ws/data/different_types/ケース名/`|
-|Mask Post-Processing|`(このレポジトリをcloneした場所)/mount/ws/data/different_types/ケース名/`|
-|Data Tracking|`(このレポジトリをcloneした場所)/mount/ws/data/different_types/ケース名/`|
-|Alignment|`(このレポジトリをcloneした場所)/mount/ws/data/different_types/ケース名/`|
-|Final Data Generation|`(このレポジトリをcloneした場所)/mount/ws/data/different_types/ケース名/`|
+|Video Segmentation|`mask`|
+|1視点からの3Dモデル予測|`shape`|
+|Dense Tracking|`cotracker`|
+|Lift to 3D|`pcd`|
+|Mask Post-Processing|`mask`|
+|Data Tracking|``|
+|Alignment|``|
+|Final Data Generation|``|
 
 
 ## 処理時間とGPUメモリ使用量

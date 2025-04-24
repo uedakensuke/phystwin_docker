@@ -103,6 +103,13 @@ ENV TORCH_CUDA_ARCH_LIST "8.6"
 RUN pip install open3d
 RUN conda install -y opencv
 
+# Install trimesh
+RUN pip install rtree trimesh
+
+# Install pytorch3d
+RUN pip install iopath
+RUN pip install --no-index --no-cache-dir pytorch3d -f https://dl.fbaipublicfiles.com/pytorch3d/packaging/wheels/py310_cu121_pyt240/download.html
+
 # download temporal phystwin
 WORKDIR /home/$USER
 RUN git clone -b refactor2 https://github.com/uedakensuke/PhysTwin.git
@@ -125,8 +132,6 @@ USER $USER
 RUN pip install warp-lang
 RUN pip install usd-core matplotlib
 RUN pip install "pyglet<2"
-RUN pip install trimesh
-RUN pip install rtree 
 RUN pip install pyrender
 
 RUN pip install stannum
@@ -135,7 +140,6 @@ RUN pip install fvcore
 RUN pip install wandb
 RUN pip install moviepy imageio
 RUN pip install cma
-RUN pip install --no-index --no-cache-dir pytorch3d -f https://dl.fbaipublicfiles.com/pytorch3d/packaging/wheels/py310_cu121_pyt240/download.html
 
 #### phystwinの初期化
 

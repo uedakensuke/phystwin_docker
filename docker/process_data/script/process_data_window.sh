@@ -1,6 +1,6 @@
 #!/bin/bash
 if [ $# -ne 1 ];then
-    echo USAGE: process_data.sh case_name
+    echo USAGE: process_data_window.sh case_name
     exit 1
 fi
 
