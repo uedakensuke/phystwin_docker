@@ -4,17 +4,6 @@ if [ $# -ne 1 ];then
     exit 1
 fi
 
-echo "------------------START: process_data"
-echo "case_name: $1"
+./_process_data.sh $1
+./_export_gaussian_data $1
 
-./vglrun.sh "python PhysTwin/process_data.py \
-    --raw_path mount/ws/raw \
-    --base_path mount/ws/data/different_types \
-    --case_name $1"
-
-if [ $? -ne 0 ]; then
-    echo "process_dataに失敗しました"
-    exit 1
-fi
-
-echo "------------------END: process_data"

@@ -1,12 +1,12 @@
 #!/bin/bash
-
 echo "------------------START: process_data"
 echo "case_name: $1"
 
-../exec.sh "python PhysTwin/process_data.py \
+./vglrun.sh "python PhysTwin/process_data.py \
     --raw_path mount/ws/raw \
     --base_path mount/ws/data/different_types \
-    --case_name $1"
+    --case_name $1
+    $2"
 
 if [ $? -ne 0 ]; then
     echo "process_dataに失敗しました"

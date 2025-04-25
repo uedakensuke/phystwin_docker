@@ -3,6 +3,7 @@ echo "------------------START: optimize_physics_sparse"
 echo "case_name: $1"
 
 ./vglrun.sh "python PhysTwin/optimize_cma.py \
+    --raw_path mount/ws/raw \
     --base_path mount/ws/data/different_types \
     --physics_sparse_path mount/ws/experiments_optimization \
     --case_name $1"

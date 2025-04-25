@@ -4,6 +4,7 @@ echo "------------------START: visualize_render_results"
 echo "case_name: $1"
 
 ../exec.sh "python PhysTwin/visualize_render_results.py \
+    --raw_path mount/ws/raw \
     --base_path mount/ws/data/different_types \
     --human_mask_path mount/ws/data/different_types_human_mask \
     --inference_path mount/ws/render \

@@ -130,31 +130,30 @@ USER $USER
 
 #### phystwinの依存ライブラリの導入
 RUN pip install warp-lang
-RUN pip install usd-core matplotlib
-RUN pip install "pyglet<2"
 RUN pip install pyrender
-
-RUN pip install stannum
 RUN pip install termcolor
 RUN pip install fvcore
 RUN pip install wandb
 RUN pip install moviepy imageio
 RUN pip install cma
-
-#### phystwinの初期化
+# RUN pip install usd-core matplotlib
+# RUN pip install "pyglet<2"
+# RUN pip install stannum
 
 # playgroundの動作に必要だった
 USER $USER
 RUN pip install pynput einops
 
+#### gsplatのインストール
+# RUN pip install git+https://github.com/nerfstudio-project/gsplat.git
 # gsplat 1.5だとPhysTwin/gaussian_splatting/gaussian_rendererの
 # __init__.pyで定義されているrender_gsplatが失敗する
 RUN pip install jaxtyping==0.3.1 rich==14.0.0 ninja==1.11.1.4 fsspec==2025.3.2
-# RUN pip install git+https://github.com/nerfstudio-project/gsplat.git
 RUN pip install gsplat==1.4.0+pt24cu121 --index-url https://docs.gsplat.studio/whl
 RUN pip install kornia
 
+#### gaussian_splattingのインストール
 WORKDIR $PHYSTWIN_DIR/gaussian_splatting
-
-# RUN pip install submodules/diff-gaussian-rasterization/
-# RUN pip install submodules/simple-knn/
+RUN pip install submodules/diff-gaussian-rasterization/
+RUN pip install submodules/simple-knn/
+RUN pip install plyfile

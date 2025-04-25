@@ -184,9 +184,40 @@ evalで生成される全てのデータは下記の場所にできる
   - 後続処理は、ここでオブジェクトが下記の個数検出されることを前提としている
     - ハンドが１～２個
     - 操作対象物１個
-2. (★)1視点からの3Dモデル予測
+2. Dense Tracking
+  - 使用ソフトウェア
+    - CoTracker3(torch hubを通して利用) 
+  - 使用データ
+    - カメラのカラー動画：`{camera_idx}.mp4`
+    - フレーム0のマスク画像：`{camera_idx}/{obj_idx}/0.png`
+  - 生成
+    - 対象物&ハンドのトラッキング結果： `{camera_idx}.npz`
+    - （確認用）対象物&ハンドのトラッキング動画： `{camera_idx}.mp4`
+3. Lift to 3D
+  - 使用データ
+    - カラー画像：`{camera_idx}/{frame_idx}.png`
+    - 対象物のマスク画像：`{camera_idx}/{対象物のobj_idx}/{frame_idx}.png`
+  - 生成
+    - 全カメラ統合対象物点群：`{frame_idx}.npz`
+4. Mask Post-Processing
+  - 使用データ
+    - 全カメラ統合対象物点群：`{frame_idx}.npz`
+    - マスク画像：`{camera_idx}/{obj_idx}/{frame_idx}.png`
+    - オブジェクト辞書：`mask_info_{cemera_idx}.json`
+  - 生成
+    - 全カメラ統合対象物点群に対するマスク：`processed_masks.pkl`
+5. Data Tracking
+  - 使用データ
+    - 全カメラ統合対象物点群：`{frame_idx}.npz`
+    - 全カメラ統合対象物点群に対するマスク：`processed_masks.pkl`
+    - 対象物&ハンドのトラッキング結果： `{camera_idx}.npz`
+  - 生成
+    - トラッキングデータ：`track_process_data.pkl`
+6. (★)1視点からの3Dモデル予測
   - 下記の処理を順に行う
     1. Image Upscale
+      - 使用ソフトウェア
+        - Stable Diffusion XL
       - 使用データ
         - カメラ0のフレーム0のカラー画像：`0/0.png`
         - カメラ0のフレーム0の対象物のマスク画像：`0/{対象物のobj_idx}/0.png`
@@ -206,40 +237,51 @@ evalで生成される全てのデータは下記の場所にできる
         - 対象物クロップ高解像度セグメンテーション画像`masked_image.png`
       - 生成
         - 対象物モデル glb形式： `object.glb`
-        - 対象物モデル ply形式： `object.ply`
-        - 対象物可視化動画（チェック用）： `visualization.mp4`
-3. Dense Tracking
-  - 使用データ
-    - カメラのカラー動画：`{camera_idx}.mp4`
-    - フレーム0のマスク画像：`{camera_idx}/{obj_idx}/0.png`
-  - 生成
-    - 対象物&ハンドのトラッキング動画（確認用）： `{camera_idx}.mp4`
-    - 対象物&ハンドのトラッキング結果： `{camera_idx}.npz`
-4. Lift to 3D
-  - 使用データ
-    - カラー画像：`{camera_idx}/{frame_idx}.png`
-    - 対象物のマスク画像：`{camera_idx}/{対象物のobj_idx}/{frame_idx}.png`
-  - 生成
-    - 全カメラ統合対象物点群：`{frame_idx}.npz`
-5. Mask Post-Processing
-  - 使用データ
-    - 全カメラ統合対象物点群：`{frame_idx}.npz`
-    - マスク画像：`{camera_idx}/{obj_idx}/{frame_idx}.png`
-    - オブジェクト辞書：`mask_info_{cemera_idx}.json`
-  - 生成
-    - 全カメラ統合対象物点群に対するマスク：`processed_masks.pkl`
-6. Data Tracking
-  - 使用データ
-    - 全カメラ統合対象物点群：`{frame_idx}.npz`
-    - 全カメラ統合対象物点群に対するマスク：`processed_masks.pkl`
-    - 対象物&ハンドのトラッキング結果： `{camera_idx}.npz`
-  - 生成
-    - トラッキングデータ：`track_process_data.pkl`
+        - （確認用）対象物モデル ply形式： `object.ply`
+        - （確認用）対象物可視化動画： `visualization.mp4`
 7. (★)Alignment
   - 使用ソフトウェア
-    - pytorch3d（GPU メモリ16GB以上）
-
+    - pytorch3d
+  - 使用データ
+    - 対象物モデル glb形式： `object.glb`
+    - フレーム0のカラー画像：`{camera_idx}/0.png`
+    - フレーム0の対象物のマスク画像：`{camera_idx}/{対象物のobj_idx}/0.png`
+    - 全カメラ統合対象物点群：`{frame_idx}.npz`
+    - 全カメラ統合対象物点群に対するマスク：`processed_masks.pkl`
+  - 生成
+    - アライン済み対象物モデル glb形式：`final_mesh.glb`
+    - (中間ファイル)マッチング結果：`best_match.pkl`
+    - （確認用）：`mesh_matching.png`
+    - （確認用）：`render_matching.png`
+    - （確認用）：`raw_matching.png`
+    - （確認用）：`pnp_results.png`
+    - （確認用）：`raw_matching_valid.png`
+    - （確認用）：`final_matching.mp4`
 8. Final Data Generation
+  - 使用データ
+    - shape priorを使用しない場合
+      - トラッキングデータ：`track_process_data.pkl`
+    - shape priorを使用する場合
+      - アライン済み対象物モデル glb形式：`final_mesh.glb`
+      - トラッキングデータ：`track_process_data.pkl`
+  - 生成
+    - 前処理済みデータ：`final_data.pkl`
+    - （確認用）対象物&ハンドの点群のトラッキング動画：`final_data.mp4`
+    - （確認用）対象物の点群の360度動画：`final_pcd.mp4`
+
+
+- `final_data.pkl`は下記辞書が保存されている
+  ```
+  {
+      "object_points":TBD,
+      "object_colors":TBD,
+      "object_visibilities":TBD,
+      "object_motions_valid":TBD,
+      "controller_points":TBD,
+      "surface_points":TBD,
+      "interior_points":TBD,
+  }
+  ```
 
 #### process_dataで生成されるデータの場所
 
@@ -251,13 +293,28 @@ process_dataで生成される全てのデータは下記の場所にできる
 |前処理|サブディレクトリ名|
 |--|--|
 |Video Segmentation|`ケース名/mask`|
-|1視点からの3Dモデル予測|`ケース名/shape`|
 |Dense Tracking|`ケース名/cotracker`|
 |Lift to 3D|`ケース名/pcd`|
 |Mask Post-Processing|`ケース名/mask`|
 |Data Tracking|`ケース名`|
-|Alignment|``|
+|1視点からの3Dモデル予測|`ケース名/shape`|
+|Alignment|`ケース名/shape/matching`|
 |Final Data Generation|``|
+
+#### (未対応事項)
+
+- export_gaussian_data.py
+```
+# Further get the data for first-frame Gaussian
+python export_gaussian_data.py
+```
+これが前処理で必要。できてないとoptimize_appearanceができない
+
+- export_video_human_mask
+```
+# Get human mask data for visualization and rendering evaluation
+python export_video_human_mask.py
+```
 
 
 ## 処理時間とGPUメモリ使用量
@@ -280,23 +337,9 @@ RTX 3060 12G環境で確認
 
 - 入力データ（dataディレクトリ）
     - optimize処理で使用（必須）
-        - final_data.pkl
-            - このファイルは下記辞書が保存されている
-            ```
-            {
-                "object_points":TBD,
-                "object_colors":TBD,
-                "object_visibilities":TBD,
-                "object_motions_valid":TBD,
-                "controller_points":TBD,
-                "surface_points":TBD,
-                "interior_points":TBD,
-            }
-            ```
-        - calibrate.pkl
-            - カメラの位置姿勢（外部パラメータ）を表す行列の配列（カメラの台数分）
-        - metadata.json
-            - カメラの内部パラメータの値（カメラの台数分）
+        - `final_data.pkl`
+        - カメラ外部パラメータ：`calibrate.pkl`
+        - カメラ内部パラメータ：`metadata.json`
     - optimize処理で使用（任意）
         - color/配下の各カメラのフレーム
             - 疎なphysicsデータ生成処理でoptimizeCMA/init.mp4を生成する時に使用する。
